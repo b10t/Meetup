@@ -1,0 +1,8 @@
+dj-database-url==1.0.0
+Django==4.0.6
+django-phonenumber-field==6.3.0
+django-phonenumbers==1.0.1
+environs==9.5.0
+gunicorn==20.1.0
+psycopg2-binary==2.9.3
+python-telegram-bot==13.13
