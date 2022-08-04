@@ -1,6 +1,7 @@
 from django.db import models
 from phonenumber_field.modelfields import PhoneNumberField
 from tinymce.models import HTMLField
+from django.core.validators import MinValueValidator
 
 
 LISTENER = 'listener'
@@ -51,6 +52,7 @@ class Event(models.Model):
     type = models.CharField(max_length=10, verbose_name='Тип события', choices=MEETUP_TYPE, default='primary')
     moment_from = models.DateTimeField(verbose_name='Время начала')
     moment_to = models.DateTimeField(verbose_name='Время окончания')
+    pos_num = models.IntegerField(verbose_name='Порядковый №', default=1, validators=[MinValueValidator(1)])
 
     class Meta:
         verbose_name = 'Событие мероприятия'

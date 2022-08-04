@@ -4,7 +4,7 @@ from django.utils.html import format_html
 
 
 class EventlInline(admin.StackedInline):
-    fields = (('name', 'type'), 'description', 'location', ('moment_from', 'moment_to'))
+    fields = (('pos_num', 'name', 'type'), 'description', 'location', ('moment_from', 'moment_to'))
     model = Event
     extra = 0
 
