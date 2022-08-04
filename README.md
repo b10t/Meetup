@@ -19,6 +19,7 @@ pip install -r requirements.txt
 `ALLOWED_HOSTS` - Разрешенные хосты. Указываются через запятую, например: `127.0.0.1,localhost`.  
 `SECRET_KEY` - Секретный ключ.  
 `DEBUG` - Если нужно включить режим отладки web-сервера, установите значение в `True`.  
+`TELEGRAM_TOKEN` - Telegram токен.
 
 ### Запуск 
 ```bash
