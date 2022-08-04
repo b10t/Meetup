@@ -6,6 +6,7 @@ from tinymce.models import HTMLField
 LISTENER = 'listener'
 SPEAKER = 'speaker'
 
+
 class Participant(models.Model):
     fio = models.CharField(max_length=255, verbose_name='ФИО', db_index=True)
     telegram_id = models.BigIntegerField(verbose_name='Телеграм ID', unique=True, db_index=True)
@@ -103,3 +104,18 @@ class Question(models.Model):
     def __str__(self):
         speaker = self.speaker
         return f'{speaker.event}, {speaker.participant} - {self.asker.participant}'
+
+
+class Notification(models.Model):
+    addressee = models.BigIntegerField(verbose_name='Телеграм ID', db_index=True)
+    message = models.TextField(verbose_name='Текст сообщения')
+    created_at = models.DateTimeField(verbose_name='Дата и время создания оповещения', auto_now_add=True)
+    delivered = models.BooleanField(verbose_name='Доставлено')
+
+    class Meta:
+        verbose_name = 'Оповещение'
+        verbose_name_plural = 'Оповещения'
+
+    def __str__(self):
+        return f'{self.addressee}, {self.message[:100]}...'
+
