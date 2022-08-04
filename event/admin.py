@@ -1,5 +1,5 @@
 from django.contrib import admin
-from event.models import Participant, Meetup, Event, EventParticipant, Question
+from event.models import Participant, Meetup, Event, EventParticipant, Question, Notification
 from django.utils.html import format_html
 
 
@@ -35,3 +35,10 @@ class EventParticipantAdmin(admin.ModelAdmin):
 class QuestionAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'short_question', )
     pass
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    # list_display = ('__str__', 'short_question', )
+    pass
+
