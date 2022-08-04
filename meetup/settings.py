@@ -32,6 +32,7 @@ DEBUG = env.bool('DEBUG', False)
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', [])
 
+TELEGRAM_TOKEN = env.str('TELEGRAM_TOKEN')
 
 # Application definition
 
