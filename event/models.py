@@ -35,23 +35,42 @@ class Meetup(models.Model):
         return self.name
 
 
-class MeetupDetail(models.Model):
+class Event(models.Model):
     MEETUP_TYPE = (
         ('primary', 'Основное'),
         ('secondary', 'Вспомогательное'),
     )
-    meetup = models.ForeignKey(Meetup, verbose_name='Мероприятие', related_name='meetup', on_delete=models.CASCADE)
-    event = models.CharField(max_length=255, verbose_name='Событие', blank=False)
+    meetup = models.ForeignKey(Meetup, verbose_name='Мероприятие', related_name='events', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255, verbose_name='Название события', blank=False)
     description = HTMLField(verbose_name='Описание события')
+    location = models.TextField(verbose_name='Место прохождения', blank=False)
     type = models.CharField(max_length=10, verbose_name='Тип события', choices=MEETUP_TYPE, default='primary')
     moment_from = models.DateTimeField(verbose_name='Время начала')
     moment_to = models.DateTimeField(verbose_name='Время окончания')
-    speakers = models.ManyToManyField(Participant, verbose_name='Докладчики', related_name='event_speakers',
-                                      blank=True)
 
     class Meta:
-        verbose_name = 'Детали мероприятия'
-        verbose_name_plural = verbose_name
+        verbose_name = 'Событие мероприятия'
+        verbose_name_plural = 'События мероприятий'
 
     def __str__(self):
-        return self.event
+        return f'{self.meetup} - {self.name}'
+
+
+class EventParticipant(models.Model):
+    PARTICIPANT_STATUS = (
+        ('listener', 'слушатель'),
+        ('speaker', 'докладчик')
+    )
+    event = models.ForeignKey(Event, verbose_name='Событие', on_delete=models.CASCADE,
+                              related_name='participants')
+    participant = models.ForeignKey(Participant, verbose_name='Участник события', on_delete=models.CASCADE,
+                                    related_name='events')
+    status = models.CharField(max_length=10, verbose_name='Статус участника', choices=PARTICIPANT_STATUS, db_index=True)
+
+    class Meta:
+        verbose_name = 'Участник события'
+        verbose_name_plural = 'Участники событий'
+
+    @property
+    def __str__(self):
+        return f'{self.event} - {self.participant} ({self.get_status_display()})'

@@ -1,16 +1,18 @@
 from django.contrib import admin
-from event.models import Participant, Meetup, MeetupDetail
+from event.models import Participant, Meetup, Event, EventParticipant
 from django.utils.html import format_html
 
 
-class MeetupDetailInline(admin.StackedInline):
-    model = MeetupDetail
+class EventlInline(admin.StackedInline):
+    fields = (('name', 'type'), 'description', 'location', ('moment_from', 'moment_to'))
+    model = Event
     extra = 0
 
 
 @admin.register(Meetup)
 class MeetupAdmin(admin.ModelAdmin):
-    inlines = [MeetupDetailInline]
+    fields = ('name', 'description', 'location', ('moment_from', 'moment_to'))
+    inlines = [EventlInline]
     save_on_top = True
 
 
@@ -22,3 +24,8 @@ class ParticipantAdmin(admin.ModelAdmin):
 
     def preview_image(self, obj):
         return format_html('<img src="{}" height={} />', obj.image.url, 200)
+
+
+@admin.register(EventParticipant)
+class EventParticipantAdmin(admin.ModelAdmin):
+    pass
