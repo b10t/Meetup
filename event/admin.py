@@ -7,7 +7,7 @@ EXTRA = 0
 SAVE_ON_TOP = True
 
 
-class EventParticipantInLine(admin.StackedInline):
+class EventParticipantInLine(admin.TabularInline):
     fields = ('event', ('participant', 'status'), )
     model = EventParticipant
     extra = EXTRA
@@ -46,7 +46,7 @@ class EventAdmin(admin.ModelAdmin):
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'short_question', )
+    list_display = ('speaker', 'asker', 'short_question', )
     pass
 
 
