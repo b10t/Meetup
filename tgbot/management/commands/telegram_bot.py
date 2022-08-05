@@ -1,3 +1,6 @@
+import logging
+from enum import Enum, auto
+
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from event.models import Participant
@@ -7,6 +10,21 @@ from telegram.ext import (CallbackContext, CallbackQueryHandler,
                           CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
 from telegram.utils import helpers
+
+import tgbot.management.commands._ask_question as ask_question
+
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+logger = logging.getLogger(__name__)
+
+
+class States(Enum):
+    SHOW_MEETUPS = auto()
+    ASK_QUESTION = auto()
+
+
+STOPPING, SHOWING = map(chr, range(8, 10))
 
 
 def start_handler(update: Update, context: CallbackContext):
@@ -44,7 +62,8 @@ def start_handler(update: Update, context: CallbackContext):
         parse_mode=ParseMode.MARKDOWN_V2,
         reply_markup=inl_keyboard
     )
-    return 'callback_select_main_menu'
+    # return 'callback_select_main_menu'
+    return States.ASK_QUESTION
 
 
 def callback_select_main_menu(update: Update, context: CallbackContext):
@@ -52,14 +71,12 @@ def callback_select_main_menu(update: Update, context: CallbackContext):
     bot = update.effective_message.bot
     query = update.callback_query
 
-    # if query.data == 'CREATE_GAME':
-    #     return send_gamename_question(update, context)
-    # elif query.data == 'JOIN_THE_GAME':
-    #     return choose_game(update, context)
-    # else:
-    #     return ConversationHandler.END
-
-    ConversationHandler.END
+    if query.data == 'SHOW_MEETUPS':
+        return States.SHOW_MEETUPS
+    elif query.data == 'ASK_QUESTION':
+        return States.ASK_QUESTION
+    else:
+        return ConversationHandler.END
 
 
 def cancel(update: Update, context: CallbackContext) -> int:
@@ -84,14 +101,20 @@ class Command(BaseCommand):
         dispatcher = updater.dispatcher
 
         conversation = ConversationHandler(
+            name='main_conv',
             entry_points=[CommandHandler(
                 'start', start_handler)],  # type: ignore
             states={
+                STOPPING: [CommandHandler('start', start_handler)],
                 'callback_select_main_menu': [
                     CallbackQueryHandler(
                         callback_select_main_menu
                     )
-                ]
+                ],
+                States.ASK_QUESTION: [
+                    ask_question.question_conv
+                ],
+
                 # 'join_the_game': [
                 #     MessageHandler(
                 #         Filters.text & ~Filters.command,
