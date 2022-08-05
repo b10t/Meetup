@@ -27,10 +27,10 @@ class Participant(models.Model):
 
 class Meetup(models.Model):
     name = models.CharField(max_length=255, verbose_name='Наименование', db_index=True)
-    description = HTMLField(verbose_name='Описание')
-    location = HTMLField(verbose_name='Место проведения', blank=False)
-    moment_from = models.DateTimeField(verbose_name='Дата и время начала')
-    moment_to = models.DateTimeField(verbose_name='Дата и время окончания')
+    description = HTMLField(verbose_name='Описание', blank=True)
+    location = HTMLField(verbose_name='Место проведения', blank=True)
+    moment_from = models.DateTimeField(verbose_name='Дата и время начала', blank=True)
+    moment_to = models.DateTimeField(verbose_name='Дата и время окончания', blank=True)
 
     class Meta:
         verbose_name = 'Мероприятие'
@@ -46,12 +46,12 @@ class Event(models.Model):
         ('secondary', 'Вспомогательное'),
     )
     meetup = models.ForeignKey(Meetup, verbose_name='Мероприятие', related_name='events', on_delete=models.CASCADE)
-    name = models.CharField(max_length=255, verbose_name='Название события', blank=False)
-    description = HTMLField(verbose_name='Описание события')
-    location = models.TextField(verbose_name='Место прохождения', blank=False)
+    name = models.CharField(max_length=255, verbose_name='Название события')
+    description = HTMLField(verbose_name='Описание события', blank=True)
+    location = models.TextField(verbose_name='Место прохождения', blank=True)
     type = models.CharField(max_length=10, verbose_name='Тип события', choices=MEETUP_TYPE, default='primary')
-    moment_from = models.DateTimeField(verbose_name='Время начала')
-    moment_to = models.DateTimeField(verbose_name='Время окончания')
+    moment_from = models.DateTimeField(verbose_name='Время начала', blank=True)
+    moment_to = models.DateTimeField(verbose_name='Время окончания', blank=True)
     pos_num = models.IntegerField(verbose_name='Порядковый №', default=1, validators=[MinValueValidator(1)])
 
     class Meta:
