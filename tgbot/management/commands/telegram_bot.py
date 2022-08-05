@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from event.models import Participant
 from telegram import (ForceReply, InlineKeyboardButton, InlineKeyboardMarkup,
                       ParseMode, ReplyKeyboardRemove, Update, chat)
 from telegram.ext import (CallbackContext, CallbackQueryHandler,
@@ -26,25 +27,19 @@ def start_handler(update: Update, context: CallbackContext):
         ]
     )
 
-    user_id = update.message.chat_id
-    context.user_data['user_id'] = user_id
+    telegram_id = update.message.chat_id
     first_name = update.message.chat.first_name
+    last_name = update.message.chat.last_name if update.message.chat.last_name else ''
 
-    if update.message.chat.last_name:
-        context.user_data['last_name'] = update.message.chat.last_name
-    else:
-        context.user_data['last_name'] = ''
-
-    # database_user_id = Player.objects.filter(chat_id=user_id)
-    # if not database_user_id:
-    #     Player.objects.create(
-    #         chat_id=user_id,
-    #         firs_name=first_name,
-    #         last_name=context.user_data['last_name'],
-    #     )
+    participant, _ = Participant.objects.get_or_create(
+        telegram_id=telegram_id,
+        defaults={
+            'fio': f'{last_name} {first_name}'.strip()
+        }
+    )
 
     update.message.reply_text(
-        f'Здравствуйте, {first_name}\.\n'
+        f'Здравствуйте, {participant.fio}\.\n'
         'Это официальный бот по поддержке участников\. 🤖 \n',
         parse_mode=ParseMode.MARKDOWN_V2,
         reply_markup=inl_keyboard
@@ -89,7 +84,8 @@ class Command(BaseCommand):
         dispatcher = updater.dispatcher
 
         conversation = ConversationHandler(
-            entry_points=[CommandHandler('start', start_handler)],  # type: ignore
+            entry_points=[CommandHandler(
+                'start', start_handler)],  # type: ignore
             states={
                 'callback_select_main_menu': [
                     CallbackQueryHandler(
