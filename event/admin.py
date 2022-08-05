@@ -3,32 +3,45 @@ from event.models import Participant, Meetup, Event, EventParticipant, Question,
 from django.utils.html import format_html
 
 
+EXTRA = 0
+SAVE_ON_TOP = True
+
+
+class EventParticipantInLine(admin.StackedInline):
+    fields = ('event', ('participant', 'status'), )
+    model = EventParticipant
+    extra = EXTRA
+
+
 class EventlInline(admin.StackedInline):
     fields = (('pos_num', 'name', 'type'), 'description', 'location', ('moment_from', 'moment_to'))
     model = Event
-    extra = 0
+    extra = EXTRA
 
 
 @admin.register(Meetup)
 class MeetupAdmin(admin.ModelAdmin):
     fields = ('name', 'description', 'location', ('moment_from', 'moment_to'))
     inlines = [EventlInline]
-    save_on_top = True
+    save_on_top = SAVE_ON_TOP
 
 
 @admin.register(Participant)
 class ParticipantAdmin(admin.ModelAdmin):
-    fields = ('preview_image', 'fio', 'telegram_id', 'email', 'phone', 'company', 'position', 'image')
+    fields = (('preview_image', 'image'), ('fio', 'telegram_id'), ('company', 'position'), ('email', 'phone'))
     readonly_fields = ['preview_image']
-    save_on_top = True
+    save_on_top = SAVE_ON_TOP
 
     def preview_image(self, obj):
         return format_html('<img src="{}" height={} />', obj.image.url, 200)
 
+    preview_image.short_description = 'Аватарка'
 
-@admin.register(EventParticipant)
-class EventParticipantAdmin(admin.ModelAdmin):
-    pass
+
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    fields = ('meetup', ('pos_num', 'type', 'name'), 'location', 'description', ('moment_from', 'moment_to'))
+    inlines = [EventParticipantInLine]
 
 
 @admin.register(Question)
@@ -39,6 +52,5 @@ class QuestionAdmin(admin.ModelAdmin):
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
-    # list_display = ('__str__', 'short_question', )
     pass
 
