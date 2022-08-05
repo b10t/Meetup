@@ -1,17 +1,22 @@
 import logging
-from enum import Enum, auto
-
+import threading
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from event.models import Participant
-from telegram import (ForceReply, InlineKeyboardButton, InlineKeyboardMarkup,
-                      ParseMode, ReplyKeyboardRemove, Update, chat)
-from telegram.ext import (CallbackContext, CallbackQueryHandler,
-                          CommandHandler, ConversationHandler, Filters,
-                          MessageHandler, Updater)
-from telegram.utils import helpers
 
-import tgbot.management.commands._ask_question as ask_question
+from tgbot.management.commands.tools import get_meetups
+from telegram import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    ReplyKeyboardRemove,
+    Update
+)
+from telegram.ext import (
+    CallbackContext,
+    CallbackQueryHandler,
+    CommandHandler,
+    ConversationHandler,
+    Updater
+)
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -19,136 +24,86 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class States(Enum):
-    SHOW_MEETUPS = auto()
-    ASK_QUESTION = auto()
+HANDLE_MENU, HANDLE_MEETUP = range(2)
 
 
-STOPPING, SHOWING = map(chr, range(8, 10))
-
-
-def start_handler(update: Update, context: CallbackContext):
-    inl_keyboard = InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    '📋 Программа',
-                    callback_data='SHOW_MEETUPS'
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    '🗣 Задать вопрос спикеру',
-                    callback_data='ASK_QUESTION'
-                )
-            ]
-        ]
+def show_menu(update, context):
+    bot = context.bot
+    user_id = update.effective_user.id
+    keyboard = [
+        [InlineKeyboardButton('Программа', callback_data='Программа')],
+        [InlineKeyboardButton('Задать вопрос', callback_data='Задать вопрос')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    bot.send_message(
+        text='Здравствуйте! Это официальный бот по поддержке участников.',
+        chat_id=user_id,
+        reply_markup=reply_markup,
     )
+    return HANDLE_MENU
 
-    telegram_id = update.message.chat_id
-    first_name = update.message.chat.first_name
-    last_name = update.message.chat.last_name if update.message.chat.last_name else ''
 
-    participant, _ = Participant.objects.get_or_create(
-        telegram_id=telegram_id,
-        defaults={
-            'fio': f'{last_name} {first_name}'.strip()
-        }
+def show_meetups(update, context):
+    meetups = get_meetups()
+    keyboard = list()
+    for meetup in meetups:
+        keyboard.append(
+            [InlineKeyboardButton(meetup, callback_data=meetup)]
+        )
+    keyboard.append(
+        [InlineKeyboardButton(
+            'Главное меню',
+            callback_data='Главное меню',
+        )]
     )
-
-    update.message.reply_text(
-        f'Здравствуйте, {participant.fio}\.\n'
-        'Это официальный бот по поддержке участников\. 🤖 \n',
-        parse_mode=ParseMode.MARKDOWN_V2,
-        reply_markup=inl_keyboard
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.callback_query.answer()
+    update.callback_query.edit_message_text(
+        text='Выберите', reply_markup=reply_markup
     )
-    # return 'callback_select_main_menu'
-    return States.ASK_QUESTION
-
-
-def callback_select_main_menu(update: Update, context: CallbackContext):
-    """."""
-    bot = update.effective_message.bot
-    query = update.callback_query
-
-    if query.data == 'SHOW_MEETUPS':
-        return States.SHOW_MEETUPS
-    elif query.data == 'ASK_QUESTION':
-        return States.ASK_QUESTION
-    else:
-        return ConversationHandler.END
+    return HANDLE_MEETUP
 
 
 def cancel(update: Update, context: CallbackContext) -> int:
     """Cancel and end the conversation."""
+
     update.message.reply_text(
         'Всего доброго!', reply_markup=ReplyKeyboardRemove())
 
     return ConversationHandler.END
 
 
+def bot_starting():
+    TELEGRAM_TOKEN = settings.TELEGRAM_TOKEN
+    updater = Updater(token=TELEGRAM_TOKEN)
+    dispatcher = updater.dispatcher
+    conversation = ConversationHandler(
+        entry_points=[CommandHandler('start', show_menu)],
+        states={
+            HANDLE_MENU: [
+                CallbackQueryHandler(show_meetups, pattern=r'Программа'),
+            ],
+            HANDLE_MEETUP: [
+                CallbackQueryHandler(
+                    show_meetups, pattern=r'Вступительные мероприятия'
+                ),
+                CallbackQueryHandler(show_menu, pattern=r'Главное меню'),
+            ],
+        },
+        fallbacks=[
+            CommandHandler('cancel', cancel)],
+    )
+
+    dispatcher.add_handler(conversation)
+
+    updater.start_polling()
+    updater.idle()
+
+
 class Command(BaseCommand):
-    help = 'Telegram Bot Meetup'
+    """Start the bot."""
+
+    help = "Телеграм-бот"
 
     def handle(self, *args, **options):
-        TELEGRAM_TOKEN = settings.TELEGRAM_TOKEN
-
-        print('Start Telegram Bot')
-        print(f'{TELEGRAM_TOKEN=}')
-
-        updater = Updater(token=TELEGRAM_TOKEN)
-
-        dispatcher = updater.dispatcher
-
-        conversation = ConversationHandler(
-            name='main_conv',
-            entry_points=[CommandHandler(
-                'start', start_handler)],  # type: ignore
-            states={
-                STOPPING: [CommandHandler('start', start_handler)],
-                'callback_select_main_menu': [
-                    CallbackQueryHandler(
-                        callback_select_main_menu
-                    )
-                ],
-                States.ASK_QUESTION: [
-                    ask_question.question_conv
-                ],
-
-                # 'join_the_game': [
-                #     MessageHandler(
-                #         Filters.text & ~Filters.command,
-                #         join_the_game
-                #     )
-                # ],
-                # 'get_game_name': [
-                #     MessageHandler(
-                #         Filters.text & ~Filters.command,
-                #         get_game_name
-                #     )
-                # ],
-                # 'callback_cost_gift': [
-                #     CallbackQueryHandler(
-                #         callback_cost_gift
-                #     )
-                # ],
-                # 'callback_registration_period': [
-                #     CallbackQueryHandler(
-                #         callback_registration_period
-                #     )
-                # ],
-                # 'get_dispatch_date': [
-                #     MessageHandler(
-                #         Filters.text & ~Filters.command,
-                #         get_dispatch_date
-                #     )
-                # ],
-            },  # type: ignore
-            fallbacks=[
-                CommandHandler('cancel', cancel)],  # type: ignore
-        )
-
-        dispatcher.add_handler(conversation)
-
-        updater.start_polling()
-        updater.idle()
+        threading.Thread(target=bot_starting).start()
