@@ -12,20 +12,67 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-STOPPING, SHOWING = map(chr, range(8, 10))
+BACK_TO_MAIN_MENU, SHOWING = map(chr, range(8, 10))
+
+(
+    PARENTS,
+    CHILDREN,
+    SELF,
+    GENDER,
+    MALE,
+    FEMALE,
+    AGE,
+    NAME,
+    START_OVER,
+    FEATURES,
+    CURRENT_FEATURE,
+    CURRENT_LEVEL,
+) = map(chr, range(10, 22))
 
 
 def show_meetups(update: Update, context: CallbackContext):
-    update.effective_message.reply_text(
-        f'ASK_QUESTION'
+    context.user_data[START_OVER] = True
+
+    inl_keyboard = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    '11',
+                    callback_data='1'
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    '22',
+                    callback_data='1'
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    'Назад',
+                    callback_data='BACK_TO_MAIN_MENU'
+                )
+            ]
+
+        ]
     )
 
-    return STOPPING
+    update.callback_query.answer()
+    update.callback_query.edit_message_text(
+        text=f'Выберете митап:',
+        reply_markup=inl_keyboard
+    )
+
+    return BACK_TO_MAIN_MENU
 
 
-question_conv = ConversationHandler(
-    entry_points=[CallbackQueryHandler(
-        show_meetups, pattern="^ASK_QUESTION")],  # type: ignore
+conversation = ConversationHandler(
+    entry_points=[
+        CallbackQueryHandler(
+            show_meetups,
+            pattern='^' + 'ASK_QUESTION' + '$'
+        )
+    ],  # type: ignore
     states={
         # "show_period_pm": [MessageHandler(Filters.text & ~Filters.command, show_period_pm)],
         # "change_or_add_period_pm": [MessageHandler(Filters.text & ~Filters.command, change_or_add_period_pm)],
@@ -40,6 +87,6 @@ question_conv = ConversationHandler(
     map_to_parent={
         # End everything!
         # ConversationHandler.END: ConversationHandler.END,
-        STOPPING: STOPPING,
+        BACK_TO_MAIN_MENU: BACK_TO_MAIN_MENU,
     },
 )
