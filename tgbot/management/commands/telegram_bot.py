@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from ._tools import get_meetups, get_event
+from ._ask_question import question_show_meetups
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -97,6 +98,8 @@ def bot_starting():
         states={
             HANDLE_MENU: [
                 CallbackQueryHandler(show_meetups, pattern=r'Программа'),
+                CallbackQueryHandler(question_show_meetups,
+                                     pattern=r'Задать вопрос'),
             ],
             HANDLE_MEETUP: [
                 CallbackQueryHandler(
