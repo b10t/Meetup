@@ -28,7 +28,31 @@ def get_meetups(today=True):
     else:
         meetups = Meetup.objects.all()
 
-    return meetups
+    return {
+        'meetups': meetups
+    }
+
+
+def get_meetup_at_now():
+    """
+    Возвращает список митапов на сейчас
+    """
+    moment = timezone.now()
+    events = Event.objects.filter(moment_to__gte=moment, moment_from__lte=moment)
+
+    if not events:
+        return []
+
+    meetup_ids = []
+    for event in events:
+        meetup_ids.append(event.meetup.id)
+    meetup_ids = list(set(meetup_ids))
+
+    meetups = Meetup.objects.filter(id__in=meetup_ids)
+    result = []
+    for meetup in meetups:
+        result.append({'meetup': meetup})
+    return result
 
 
 def get_meetup_events(meetup, current=False):
