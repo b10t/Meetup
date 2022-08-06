@@ -2,6 +2,8 @@ import logging
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
+from event.models import Participant
+
 from ._tools import (
     get_meetups,
     get_event,
@@ -11,6 +13,7 @@ from ._ask_question import question_show_meetups, question_show_event
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    ParseMode,
     ReplyKeyboardRemove,
 )
 
@@ -28,22 +31,65 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-HANDLE_MENU, HANDLE_MEETUP, HANDLE_EVENT = range(3)
+HANDLE_MENU, HANDLE_MEETUP, HANDLE_EVENT, START_OVER = range(4)
 
 
 def show_menu(update, context):
-    bot = context.bot
-    user_id = update.effective_user.id
-    keyboard = [
-        [InlineKeyboardButton('Программа', callback_data='Программа')],
-        [InlineKeyboardButton('Задать вопрос', callback_data='Задать вопрос')],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    bot.send_message(
-        text='Здравствуйте! Это официальный бот по поддержке участников.',
-        chat_id=user_id,
-        reply_markup=reply_markup,
+    text = f'Выберете действие:'
+
+    inl_keyboard = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    '📋 Программа',
+                    callback_data='Программа'
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    '🗣 Задать вопрос спикеру',
+                    callback_data='Задать вопрос'
+                )
+            ]
+        ]
     )
+
+    if context.user_data.get(START_OVER):
+        # Повторный заход
+        update.callback_query.answer()
+        update.callback_query.edit_message_text(
+            text=text,
+            reply_markup=inl_keyboard
+        )
+
+    else:
+        telegram_id = update.message.chat_id
+        context.user_data['telegram_id'] = telegram_id
+
+        first_name = update.message.chat.first_name
+        last_name = update.message.chat.last_name if update.message.chat.last_name else ''
+
+        participant, _ = Participant.objects.get_or_create(
+            telegram_id=telegram_id,
+            defaults={
+                'fio': f'{last_name} {first_name}'.strip()
+            }
+        )
+
+        update.message.reply_text(
+            f'Здравствуйте, {participant.fio}\.\n'
+            'Это официальный бот по поддержке участников\. 🤖 \n',
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
+
+        update.message.reply_text(
+            text=text,
+            parse_mode=ParseMode.MARKDOWN_V2,
+            reply_markup=inl_keyboard
+        )
+
+    context.user_data[START_OVER] = True
+
     return HANDLE_MENU
 
 
