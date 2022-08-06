@@ -2,13 +2,18 @@ import logging
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from ._tools import get_meetups, get_event
+from ._tools import (
+    get_meetups,
+    get_event,
+    get_message,
+)
 from ._ask_question import question_show_meetups, question_show_event
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     ReplyKeyboardRemove,
 )
+
 from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
@@ -77,7 +82,22 @@ def show_event(update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.answer()
     update.callback_query.edit_message_text(
-        text=f'Выберите: {event}',
+        text='Выберите: ',
+        reply_markup=reply_markup,
+    )
+    return HANDLE_EVENT
+
+
+def show_event_details(update, context):
+    event_id = update.callback_query.data
+    message = get_message(event_id)
+    keyboard = [
+        [InlineKeyboardButton('Назад', callback_data='Назад')],
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.callback_query.answer()
+    update.callback_query.edit_message_text(
+        text=message,
         reply_markup=reply_markup,
     )
     return HANDLE_EVENT
