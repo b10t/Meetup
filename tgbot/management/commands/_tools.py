@@ -8,6 +8,7 @@ class States(Enum):
     SHOW_MEETUPS = 'SHOW_MEETUPS'
     BACK_TO_MAIN_MENU = 'BACK_TO_MAIN_MENU'
     START_OVER = 'START_OVER'
+    SELECT_MEETUP = 'SELECT_MEETUP'
 
 
 def get_meetups():
