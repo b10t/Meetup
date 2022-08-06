@@ -16,35 +16,19 @@ logger = logging.getLogger(__name__)
 def show_meetups(update: Update, context: CallbackContext):
     """Отображает список митапов."""
     context.user_data[States.START_OVER] = True
-
-    inl_keyboard = InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton(
-                    '33',
-                    callback_data='1'
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    '44',
-                    callback_data='1'
-                )
-            ],
-            [
-                InlineKeyboardButton(
-                    'Назад',
-                    callback_data='BACK_TO_MAIN_MENU'
-                )
-            ]
-
-        ]
+    keyboard = list()
+    meetups = get_meetups()
+    for meetup in meetups:
+        keyboard.append(
+            [InlineKeyboardButton(meetup.name, callback_data=meetup.id)]
+        )
+    keyboard.append(
+        [InlineKeyboardButton('Главное меню', callback_data='Главное меню')]
     )
-
     update.callback_query.answer()
     update.callback_query.edit_message_text(
-        text=f'Выберете митап:',
-        reply_markup=inl_keyboard
+        text='Выберете митап:',
+        reply_markup=keyboard
     )
 
     return States.BACK_TO_MAIN_MENU
@@ -56,11 +40,10 @@ conversation = ConversationHandler(
             show_meetups,
             pattern='^' + 'SHOW_MEETUPS' + '$'
         )
-    ],  # type: ignore
+    ],
     states={
     },
     fallbacks=[
-        # CommandHandler('cancel', cancel)
     ],
     map_to_parent={
         States.BACK_TO_MAIN_MENU: States.BACK_TO_MAIN_MENU,

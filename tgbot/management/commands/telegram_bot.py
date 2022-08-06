@@ -1,4 +1,3 @@
-from bdb import effective
 import logging
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -8,15 +7,17 @@ from ._tools import (
     get_event,
     get_message,
 )
-
-from ._tools import get_meetups, get_event
+from ._tools import (
+    get_meetups,
+    get_event
+)
 from ._ask_question import question_show_meetups
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     ReplyKeyboardRemove,
-    ParseMode,
 )
+
 from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
