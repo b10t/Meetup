@@ -1,11 +1,12 @@
 import logging
+import re
 
 from telegram import (InlineKeyboardButton, InlineKeyboardMarkup, ParseMode,
                       ReplyKeyboardMarkup, Update)
 from telegram.ext import (CallbackContext, CallbackQueryHandler,
                           CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
-from tgbot.management.commands._tools import get_meetups
+from tgbot.management.commands._tools import get_event, get_meetups
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 HANDLE_MENU, HANDLE_MEETUP, HANDLE_EVENT = range(3)
 
 
-def question_show_meetups(update, context):
+def question_show_meetups(update: Update, context: CallbackContext):
     logger.info('question_show_meetups')
 
     meetups = get_meetups()
@@ -40,6 +41,32 @@ def question_show_meetups(update, context):
         text='Выберите: ', reply_markup=reply_markup
     )
     return HANDLE_MEETUP
+
+
+def question_show_event(update: Update, context: CallbackContext):
+    logger.info('question_show_event')
+
+    query = update.callback_query
+
+    meetup_id = int(re.sub(r'[\D]', '', query.data))
+    events = get_event(meetup_id)
+    keyboard = list()
+    for event in events:
+        keyboard.append(
+            [InlineKeyboardButton(event.name, callback_data=f'AQ_{event.id}')]
+        )
+    keyboard.append(
+        [InlineKeyboardButton('Назад', callback_data='AQ_Назад')]
+    )
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    query.answer()
+    query.edit_message_text(
+        text=f'Выберите: {event}',
+        reply_markup=reply_markup,
+    )
+    return HANDLE_EVENT
+
 
 
 # def show_meetups(update: Update, context: CallbackContext):

@@ -3,7 +3,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from ._tools import get_meetups, get_event
-from ._ask_question import question_show_meetups
+from ._ask_question import question_show_meetups, question_show_event
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -105,13 +105,20 @@ def bot_starting():
                 CallbackQueryHandler(
                     show_event, pattern=r'[0-9]'
                 ),
+                CallbackQueryHandler(
+                    question_show_event, pattern=r'^AQ_[0-9]*$'
+                ),
                 CallbackQueryHandler(show_menu, pattern=r'Главное меню'),
             ],
             HANDLE_EVENT: [
                 CallbackQueryHandler(show_event, pattern=r'[0-9]'),
                 CallbackQueryHandler(show_meetups, pattern=r'Назад'),
+                CallbackQueryHandler(
+                    question_show_meetups,
+                    pattern=r'AQ_Назад'
+                ),
             ],
-        },
+        },  # type: ignore
         fallbacks=[
             CommandHandler('cancel', cancel)],
     )

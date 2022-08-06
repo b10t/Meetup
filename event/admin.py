@@ -14,7 +14,7 @@ class EventParticipantInLine(admin.TabularInline):
 
 
 class EventlInline(admin.StackedInline):
-    fields = (('pos_num', 'name', 'type'), 'description', 'location', ('moment_from', 'moment_to'))
+    fields = (('pos_num', 'name'), 'description', 'location', ('moment_from', 'moment_to'))
     model = Event
     extra = EXTRA
 
@@ -29,6 +29,7 @@ class MeetupAdmin(admin.ModelAdmin):
 @admin.register(Participant)
 class ParticipantAdmin(admin.ModelAdmin):
     fields = (('preview_image', 'image'), ('fio', 'telegram_id'), ('company', 'position'), ('email', 'phone'))
+    list_display = ('telegram_id', 'fio', 'company', 'position', )
     readonly_fields = ['preview_image']
     save_on_top = SAVE_ON_TOP
 
@@ -53,4 +54,3 @@ class QuestionAdmin(admin.ModelAdmin):
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
     pass
-
