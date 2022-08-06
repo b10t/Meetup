@@ -1,15 +1,11 @@
-from enum import Enum, auto
-
-from event.models import Meetup
-
-
-class States(Enum):
-    """Состояния бота."""
-    SHOW_MEETUPS = 'SHOW_MEETUPS'
-    BACK_TO_MAIN_MENU = 'BACK_TO_MAIN_MENU'
-    START_OVER = 'START_OVER'
+from event.models import Meetup, Event
 
 
 def get_meetups():
     meetups = Meetup.objects.all()
-    return [meetup.name for meetup in meetups]
+    return [meetup for meetup in meetups]
+
+
+def get_event(meetup_id):
+    events = Event.objects.filter(meetup_id=meetup_id)
+    return [event for event in events]

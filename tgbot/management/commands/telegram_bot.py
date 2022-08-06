@@ -1,17 +1,14 @@
 import logging
-import threading
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from tgbot.management.commands._tools import get_meetups
+from ._tools import get_meetups, get_event
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     ReplyKeyboardRemove,
-    Update
 )
 from telegram.ext import (
-    CallbackContext,
     CallbackQueryHandler,
     CommandHandler,
     ConversationHandler,
@@ -19,12 +16,13 @@ from telegram.ext import (
 )
 
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
 
 
-HANDLE_MENU, HANDLE_MEETUP = range(2)
+HANDLE_MENU, HANDLE_MEETUP, HANDLE_EVENT = range(3)
 
 
 def show_menu(update, context):
@@ -48,7 +46,7 @@ def show_meetups(update, context):
     keyboard = list()
     for meetup in meetups:
         keyboard.append(
-            [InlineKeyboardButton(meetup, callback_data=meetup)]
+            [InlineKeyboardButton(meetup.name, callback_data=meetup.id)]
         )
     keyboard.append(
         [InlineKeyboardButton(
@@ -59,17 +57,34 @@ def show_meetups(update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.answer()
     update.callback_query.edit_message_text(
-        text='Выберите', reply_markup=reply_markup
+        text='Выберите: ', reply_markup=reply_markup
     )
     return HANDLE_MEETUP
 
 
-def cancel(update: Update, context: CallbackContext) -> int:
-    """Cancel and end the conversation."""
+def show_event(update, context):
+    meetup_id = update.callback_query.data
+    events = get_event(meetup_id)
+    keyboard = list()
+    for event in events:
+        keyboard.append(
+            [InlineKeyboardButton(event.name, callback_data=event.id)]
+        )
+    keyboard.append(
+        [InlineKeyboardButton('Назад', callback_data='Назад')]
+    )
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.callback_query.answer()
+    update.callback_query.edit_message_text(
+        text=f'Выберите: {event}',
+        reply_markup=reply_markup,
+    )
+    return HANDLE_EVENT
 
+
+def cancel(update, context):
     update.message.reply_text(
         'Всего доброго!', reply_markup=ReplyKeyboardRemove())
-
     return ConversationHandler.END
 
 
@@ -85,25 +100,26 @@ def bot_starting():
             ],
             HANDLE_MEETUP: [
                 CallbackQueryHandler(
-                    show_meetups, pattern=r'Вступительные мероприятия'
+                    show_event, pattern=r'[0-9]'
                 ),
                 CallbackQueryHandler(show_menu, pattern=r'Главное меню'),
             ],
+            HANDLE_EVENT: [
+                CallbackQueryHandler(show_event, pattern=r'[0-9]'),
+                CallbackQueryHandler(show_meetups, pattern=r'Назад'),
+            ],
         },
         fallbacks=[
-            CommandHandler('cancel', cancel)],  # type: ignore
+            CommandHandler('cancel', cancel)],
     )
 
     dispatcher.add_handler(conversation)
 
     updater.start_polling()
-    # updater.idle()
 
 
 class Command(BaseCommand):
-    """Start the bot."""
-
-    help = "Телеграм-бот"
+    help = "Telegram bot"
 
     def handle(self, *args, **options):
-        threading.Thread(target=bot_starting).start()
+        bot_starting()
