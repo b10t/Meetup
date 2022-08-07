@@ -180,6 +180,7 @@ def get_speaker_questions(speaker, event=None, answered=None):
 def get_telegram_id(participant):
     """
     Возвращает telegram_id участника
+    participant: int, Participant, EventParticipant
     """
     if isinstance(participant, int):
         return participant
