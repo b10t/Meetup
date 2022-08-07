@@ -3,7 +3,7 @@ import re
 import django
 from django.utils import timezone
 
-from event.models import Event, EventParticipant, Meetup, Question
+from event.models import Participant, Event, EventParticipant, Meetup, Question
 
 
 def html2txt(html):
@@ -39,6 +39,8 @@ def get_meetup_at_now():
     """
     moment = timezone.now()
     events = Event.objects.filter(moment_to__gte=moment, moment_from__lte=moment)
+
+    # events.list ?...
 
     if not events:
         return []
@@ -130,3 +132,46 @@ def get_bot_funcs_descr():
 
 def save_question(speaker, asker, question):
     return Question.objects.create(speaker=speaker, asker=asker, question=question)
+
+
+def get_acquaintance_descr():
+    """
+    Возвращает описание процесса знакомства с участниками
+    """
+    return """Описание процесса знакомства с участниками"""
+
+
+def get_speaker_questions(speaker, event=None, answered=None):
+    """
+    Возвращает список заданных speaker-у вопросов.
+    speaker - EventParticipant или int
+    event - Event
+    answered - bool: True - отвеченных, False - неотвеченных, None - всех
+    """
+    if isinstance(speaker, EventParticipant):
+        if answered is None:
+            questions = speaker.questions_to_speaker.all()
+        else:
+            questions = speaker.questions_to_speaker.all().filter(answered=answered)
+    elif isinstance(speaker, int) and isinstance(event, Event):
+        participant = Participant.objects.get(telegram_id=speaker)
+        event_participant = EventParticipant.objects.get(event=event, participant=participant)
+        if answered is None:
+            questions = event_participant.questions_to_speaker.all()
+        else:
+            questions = event_participant.questions_to_speaker.all().filter(answered=answered)
+
+    result = []
+    for question in questions:
+        result.append({
+            'speaker': question.speaker.participant,
+            'speaker_fio': question.speaker.participant.fio,
+            'speaker_tg_id': question.speaker.participant.telegram_id,
+            'asker': question.asker.participant,
+            'asker_fio': question.asker.participant.fio,
+            'asker_tg_id': question.asker.participant.telegram_id,
+            'question': question.question,
+            'answered': question.answered,
+            'moment': format_datetime(question.moment)
+        })
+    return result
