@@ -9,14 +9,15 @@ from ._tools import (
     get_event,
     get_message,
 )
-from ._ask_question import question_show_meetups, question_show_event
+
+from ._tools import get_meetups, get_event
+from ._ask_question import question_show_meetups
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    ParseMode,
     ReplyKeyboardRemove,
+    ParseMode,
 )
-
 from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
@@ -31,11 +32,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-HANDLE_MENU, HANDLE_MEETUP, HANDLE_EVENT, START_OVER = range(4)
+(
+    HANDLE_MENU,
+    HANDLE_MEETUP,
+    HANDLE_EVENT,
+    START_OVER
+) = range(4)
 
 
 def show_menu(update, context):
-    text = f'Выберете действие:'
+    text = 'Выберете действие:'
 
     inl_keyboard = InlineKeyboardMarkup(
         [
@@ -171,20 +177,13 @@ def bot_starting():
                 CallbackQueryHandler(
                     show_event, pattern=r'[0-9]'
                 ),
-                CallbackQueryHandler(
-                    question_show_event, pattern=r'^AQ_[0-9]*$'
-                ),
                 CallbackQueryHandler(show_menu, pattern=r'Главное меню'),
             ],
             HANDLE_EVENT: [
-                CallbackQueryHandler(show_event, pattern=r'[0-9]'),
-                CallbackQueryHandler(show_meetups, pattern=r'Назад'),
-                CallbackQueryHandler(
-                    question_show_meetups,
-                    pattern=r'AQ_Назад'
-                ),
+                CallbackQueryHandler(show_event_details, pattern=r'[0-9]'),
+                CallbackQueryHandler(show_menu, pattern=r'Назад'),
             ],
-        },  # type: ignore
+        },
         fallbacks=[
             CommandHandler('cancel', cancel)],
     )
