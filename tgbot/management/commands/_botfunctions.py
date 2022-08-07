@@ -175,3 +175,17 @@ def get_speaker_questions(speaker, event=None, answered=None):
             'moment': format_datetime(question.moment)
         })
     return result
+
+
+def get_telegram_id(participant):
+    """
+    Возвращает telegram_id участника
+    """
+    if isinstance(participant, int):
+        return participant
+    elif isinstance(participant, Participant):
+        return participant.telegram_id
+    elif isinstance(participant, EventParticipant):
+        return participant.participant.telegram_id
+    else:
+        raise TypeError(f'participant может быть int, Participant или EventParticipant, но не {type(participant)}')
