@@ -6,7 +6,17 @@ from telegram import (InlineKeyboardButton, InlineKeyboardMarkup, ParseMode,
 from telegram.ext import (CallbackContext, CallbackQueryHandler,
                           CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
-from tgbot.management.commands._tools import get_event, get_meetups
+
+from ._botfunctions import (
+    get_meetups,
+    get_meetup_at_now,
+    get_meetup_events,
+    get_meetup_participants,
+    get_event_participants,
+    get_participant_descr,
+    get_acquaintance_descr,
+    get_speaker_questions,
+)
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -19,7 +29,9 @@ HANDLE_MENU, HANDLE_MEETUP, HANDLE_EVENT = range(3)
 def question_show_meetups(update: Update, context: CallbackContext):
     logger.info('question_show_meetups')
 
-    meetups = get_meetups()
+    text = 'Выберите:'
+
+    meetups = get_meetups().get('meetups', [])
     keyboard = list()
     for meetup in meetups:
         keyboard.append(
@@ -35,10 +47,14 @@ def question_show_meetups(update: Update, context: CallbackContext):
             callback_data='Главное меню',
         )]
     )
+
+    if not meetups:
+        text = 'К сожалению на данное время, нет мероприятий.'
+
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.answer()
     update.callback_query.edit_message_text(
-        text='Выберите: ', reply_markup=reply_markup
+        text=text, reply_markup=reply_markup
     )
     return HANDLE_MEETUP
 
@@ -49,7 +65,7 @@ def question_show_event(update: Update, context: CallbackContext):
     query = update.callback_query
 
     meetup_id = int(re.sub(r'[\D]', '', query.data))
-    events = get_event(meetup_id)
+    events = get_meetup_events(meetup_id)
     keyboard = list()
     for event in events:
         keyboard.append(
@@ -66,7 +82,6 @@ def question_show_event(update: Update, context: CallbackContext):
         reply_markup=reply_markup,
     )
     return HANDLE_EVENT
-
 
 
 # def show_meetups(update: Update, context: CallbackContext):
