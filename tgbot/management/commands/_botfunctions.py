@@ -3,7 +3,7 @@ import re
 import django
 from django.utils import timezone
 
-from event.models import Participant, Event, EventParticipant, Meetup, Question
+from event.models import Participant, Event, EventParticipant, Meetup, Question, Donat
 
 
 def html2txt(html):
@@ -190,3 +190,23 @@ def get_telegram_id(participant):
         return participant.participant.telegram_id
     else:
         raise TypeError(f'participant может быть int, Participant или EventParticipant, но не {type(participant)}')
+
+
+def get_donates(participant=None):
+    """
+    Возвращает весь список донатов или для конкретного участника
+    participant: int, Participant, EventParticipant
+    """
+    if participant is None:
+        donates = Donat.objects.all()
+    else:
+        donates = Donat.objects.all().filter(addressee=get_telegram_id(participant))
+
+    result = []
+    for donate in donates:
+        result.append({
+            'addressee': donate.addressee,
+            'summa': donate.summa,
+            'moment': format_datetime(donate.created_at)
+        })
+    return result
