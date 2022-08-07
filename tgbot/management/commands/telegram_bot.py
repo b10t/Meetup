@@ -10,8 +10,14 @@ from ._tools import (
     get_message,
 )
 
-from ._tools import get_meetups, get_event
-from ._ask_question import question_show_meetups
+from ._tools import (
+    get_meetups,
+    get_event,
+)
+from ._ask_question import (
+    question_show_meetups,
+    question_show_event,
+)
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -43,7 +49,7 @@ logger = logging.getLogger(__name__)
 def show_menu(update, context):
     text = 'Выберете действие:'
 
-    inl_keyboard = InlineKeyboardMarkup(
+    keyboard = InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton(
@@ -91,7 +97,7 @@ def show_menu(update, context):
         update.message.reply_text(
             text=text,
             parse_mode=ParseMode.MARKDOWN_V2,
-            reply_markup=inl_keyboard
+            reply_markup=keyboard
         )
 
     context.user_data[START_OVER] = True
@@ -177,11 +183,14 @@ def bot_starting():
                 CallbackQueryHandler(
                     show_event, pattern=r'[0-9]'
                 ),
+                CallbackQueryHandler(
+                    question_show_event, pattern=r'^AQ_[0-9]*$'
+                ),
                 CallbackQueryHandler(show_menu, pattern=r'Главное меню'),
             ],
             HANDLE_EVENT: [
                 CallbackQueryHandler(show_event_details, pattern=r'[0-9]'),
-                CallbackQueryHandler(show_menu, pattern=r'Назад'),
+                CallbackQueryHandler(show_meetups, pattern=r'Назад'),
             ],
         },
         fallbacks=[
