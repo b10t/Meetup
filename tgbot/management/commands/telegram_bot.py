@@ -191,6 +191,8 @@ def bot_starting():
             HANDLE_EVENT: [
                 CallbackQueryHandler(show_event_details, pattern=r'[0-9]'),
                 CallbackQueryHandler(show_meetups, pattern=r'Назад'),
+                CallbackQueryHandler(show_menu, pattern=r'AQ_Назад'),
+
             ],
         },
         fallbacks=[
