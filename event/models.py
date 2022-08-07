@@ -95,7 +95,7 @@ class Question(models.Model):
                               on_delete=models.CASCADE)
     question = models.TextField(verbose_name='Текст вопроса')
     moment = models.DateTimeField(verbose_name='Дата и время создания вопроса', auto_now_add=True)
-    asked = models.BooleanField(verbose_name='Вопрос отвечен', default=False)
+    answered = models.BooleanField(verbose_name='Вопрос отвечен', default=False)
 
     class Meta:
         verbose_name = 'Вопрос докладчику'
