@@ -71,7 +71,7 @@ def show_menu(update, context):
         update.callback_query.answer()
         update.callback_query.edit_message_text(
             text=text,
-            reply_markup=inl_keyboard
+            reply_markup=keyboard
         )
 
     else:
