@@ -89,9 +89,9 @@ class EventParticipant(models.Model):
 
 
 class Question(models.Model):
-    speaker = models.ForeignKey(EventParticipant, related_name='speakers', verbose_name='Докладчики на событии',
+    speaker = models.ForeignKey(EventParticipant, related_name='questions_to_speaker', verbose_name='Докладчики на событии',
                                 on_delete=models.CASCADE)
-    asker = models.ForeignKey(EventParticipant, related_name='askers', verbose_name='Кто задал вопрос',
+    asker = models.ForeignKey(EventParticipant, related_name='questions_of_askers', verbose_name='Кто задал вопрос',
                               on_delete=models.CASCADE)
     question = models.TextField(verbose_name='Текст вопроса')
     moment = models.DateTimeField(verbose_name='Дата и время создания вопроса', auto_now_add=True)
@@ -107,11 +107,11 @@ class Question(models.Model):
 
     def __str__(self):
         speaker = self.speaker
-        return f'{speaker.event}, {speaker.participant} - {self.asker.participant}'
+        return f'{speaker.event}: {speaker.participant} -> {self.asker.participant} ({self.answered})'
 
 
 class Notification(models.Model):
-    addressee = models.BigIntegerField(verbose_name='Телеграм ID', db_index=True)
+    addressee = models.BigIntegerField(verbose_name='Телеграм ID адресата', db_index=True)
     message = models.TextField(verbose_name='Текст сообщения')
     created_at = models.DateTimeField(verbose_name='Дата и время создания оповещения', auto_now_add=True)
     delivered = models.BooleanField(verbose_name='Доставлено')
@@ -122,4 +122,19 @@ class Notification(models.Model):
 
     def __str__(self):
         return f'{self.addressee}, {self.message[:100]}...'
+
+
+class Donat(models.Model):
+    addressee = models.BigIntegerField(verbose_name='Телеграм ID донатируемого', db_index=True)
+    summa = models.IntegerField(verbose_name='Сумма доната')
+    created_at = models.DateTimeField(verbose_name='Дата и время доната', auto_now_add=True)
+    delivered = models.BooleanField(verbose_name='Доставлено')
+
+    class Meta:
+        verbose_name = 'Донат'
+        verbose_name_plural = 'Донаты'
+
+    def __str__(self):
+        return f'{self.addressee}, {self.summa}'
+
 
