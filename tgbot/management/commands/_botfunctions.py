@@ -1,9 +1,13 @@
 import re
+from datetime import timedelta
 
 import django
+from django.db.models import F
 from django.utils import timezone
 
-from event.models import Participant, Event, EventParticipant, Meetup, Question, Donat
+from event.models import (Donat, Event, EventParticipant, Meetup, Participant,
+                          Question, Notification)
+from event.models import LISTENER, SPEAKER
 
 
 def html2txt(html):
@@ -37,10 +41,8 @@ def get_meetup_at_now():
     """
     Возвращает список митапов на сейчас
     """
-    moment = timezone.now()
+    moment = django.utils.timezone.now()
     events = Event.objects.filter(moment_to__gte=moment, moment_from__lte=moment)
-
-    # events.list ?...
 
     if not events:
         return []
@@ -63,7 +65,7 @@ def get_meetup_events(meetup, current=False):
     Текущее событие имеет признак current=True
     """
 
-    moment = timezone.now()
+    moment = django.utils.timezone.now()
     if current:
         events = Event.objects.filter(meetup=meetup, moment_to__gte=moment, moment_from__lte=moment)
     else:
@@ -92,16 +94,21 @@ def get_meetup_participants(meetup):
     return result
 
 
-def get_event_participants(event):
+def get_event_participants(event, status=None):
     """
     Возвращает список участников события
     """
+    if status is None:
+        event_participants = EventParticipant.objects.filter(event=event)
+    else:
+        event_participants = EventParticipant.objects.filter(event=event, status=status)
+
     result = []
-    for event_participant in EventParticipant.objects.filter(event=event):
+    for event_participant in event_participants:
         result.append({
             'tg_id': event_participant.participant.telegram_id,
             'fio': event_participant.participant.fio,
-            'status': event_participant.status
+            'speaker': event_participant.status
         })
     return result
 
@@ -189,7 +196,7 @@ def get_telegram_id(participant):
     elif isinstance(participant, EventParticipant):
         return participant.participant.telegram_id
     else:
-        raise TypeError(f'participant может быть int, Participant или EventParticipant, но не {type(participant)}')
+        raise TypeError(f'participant должен быть int, Participant или EventParticipant, но не {type(participant)}')
 
 
 def get_donates(participant=None):
@@ -210,3 +217,19 @@ def get_donates(participant=None):
             'moment': format_datetime(donate.created_at)
         })
     return result
+
+
+def shift_datetimes(days=0, hours=0):
+    """
+    Во ВСЕХ полях ВСЕХ моделей сдвигает значения DateTime на указанное количество дней и часов.
+    days и hours могут принимать положительные и отрицательные значения
+    """
+    if not days and not hours:
+        raise ValueError('Значения дней и/или часов должны отличаться от нуля')
+
+    delta = timedelta(days=days, hours=hours)
+    Meetup.objects.update(moment_from=F('moment_from') + delta)
+    Meetup.objects.update(moment_to=F('moment_to') + delta)
+    Event.objects.update(moment_from=F('moment_from') + delta)
+    Event.objects.update(moment_to=F('moment_to') + delta)
+    Question.objects.update(moment=F('moment') + delta)
