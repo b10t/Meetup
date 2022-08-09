@@ -6,8 +6,10 @@ from telegram import (InlineKeyboardButton, InlineKeyboardMarkup, ParseMode,
 from telegram.ext import (CallbackContext, CallbackQueryHandler,
                           CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
+from tgbot.management.commands._tools import get_event, get_meetups
+from tgbot.management.commands.telegram_bot import (
+    HANDLE_MEETUP,
 
-from ._botfunctions import (
     get_meetups,
     get_meetup_at_now,
     get_meetup_events,
@@ -23,7 +25,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-HANDLE_MENU, HANDLE_MEETUP, HANDLE_EVENT = range(3)
 
 
 def question_show_meetups(update: Update, context: CallbackContext):
@@ -81,7 +82,7 @@ def question_show_event(update: Update, context: CallbackContext):
         text=f'Выберите: {event}',
         reply_markup=reply_markup,
     )
-    return HANDLE_EVENT
+    return HANDLE_QUESTIONS
 
 
 # def show_meetups(update: Update, context: CallbackContext):

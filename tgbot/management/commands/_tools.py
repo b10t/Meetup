@@ -1,4 +1,8 @@
-from event.models import Meetup, Event
+from event.models import (
+    Meetup,
+    Event,
+    EventParticipant,
+)
 
 
 def get_event(meetup_id):
@@ -15,3 +19,8 @@ def get_message(event_id):
 def get_meetups():
     meetups = Meetup.objects.all()
     return [meetup for meetup in meetups]
+
+
+def get_event_speker(event_id):
+    speakers = EventParticipant.objects.filter(event_id=2)
+    return [speaker for speaker in speakers]

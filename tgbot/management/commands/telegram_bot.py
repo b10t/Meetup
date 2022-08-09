@@ -13,11 +13,17 @@ from ._tools import (
 from ._tools import (
     get_meetups,
     get_event,
+    get_event_speker,
 )
-from ._ask_question import (
-    question_show_meetups,
-    question_show_event,
+from event.models import LISTENER, SPEAKER
+from ._botfunctions import (
+    get_event_participants,
 )
+# from ._ask_question import (
+#     question_show_meetups,
+#     question_show_event,
+
+# )
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -42,8 +48,10 @@ logger = logging.getLogger(__name__)
     HANDLE_MENU,
     HANDLE_MEETUP,
     HANDLE_EVENT,
-    START_OVER
-) = range(4)
+    START_OVER,
+    HANDLE_QUESTIONS,
+    HANDLE_SPEAKER_QUESTIONS,
+) = range(6)
 
 
 def show_menu(update, context):
@@ -147,6 +155,7 @@ def show_event(update, context):
 
 
 def show_event_details(update, context):
+    logger.info('show_event_details')
     event_id = update.callback_query.data
     message = get_message(event_id)
     keyboard = [
@@ -159,6 +168,95 @@ def show_event_details(update, context):
         reply_markup=reply_markup,
     )
     return HANDLE_EVENT
+
+
+def show_questions_meetup(update, context):
+    logger.info('show_questions_meetup')
+
+    meetups = get_meetups()
+    keyboard = list()
+    for meetup in meetups:
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    meetup.name, callback_data=meetup.id
+                )
+            ]
+        )
+    keyboard.append(
+        [InlineKeyboardButton(
+            'Главное меню',
+            callback_data='Главное меню',
+        )]
+    )
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.callback_query.answer()
+    update.callback_query.edit_message_text(
+        text='Выберите: ', reply_markup=reply_markup
+    )
+    return HANDLE_QUESTIONS
+
+
+def show_questions_event(update, context):
+    logger.info('show_questions_event')
+    meetup_id = update.callback_query.data
+    events = get_event(meetup_id)
+    keyboard = list()
+    for event in events:
+        keyboard.append(
+            [InlineKeyboardButton(event.name, callback_data=event.id)]
+        )
+    keyboard.append(
+        [InlineKeyboardButton('Назад', callback_data='Назад')]
+    )
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    update.callback_query.answer()
+    update.callback_query.edit_message_text(
+        text=f'Выберите: {events}',
+        reply_markup=reply_markup,
+    )
+    return HANDLE_SPEAKER_QUESTIONS
+
+
+def show_event_speakers(update, context):
+    logger.info('show_event_speakers')
+    event_id = update.callback_query.data
+    speakers = get_event_participants(event_id, SPEAKER)
+    keyboard = list()
+    for speaker in speakers:
+        keyboard.append(
+            [InlineKeyboardButton(
+                speaker['fio'],
+                callback_data=speaker['tg_id']
+                )]
+        )
+    keyboard.append(
+        [InlineKeyboardButton('Назад', callback_data='Назад')]
+    )
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.callback_query.answer()
+    update.callback_query.edit_message_text(
+        text='Выберите: ',
+        reply_markup=reply_markup,
+    )
+    return HANDLE_SPEAKER_QUESTIONS
+
+
+def show_questions_speaker(update, context):
+    logger.info('show_questions_speaker')
+    event_id = update.callback_query.data
+    event_speakers = get_event_speker(event_id)
+    keybord = [
+        InlineKeyboardButton('Назад', callback_data='Назад'),
+    ]
+    reply_markup = InlineKeyboardMarkup(keybord)
+    update.callback_query.answer()
+    update.callback_query.edit_message_text(
+        text=f'Выберите: {event_speakers}',
+        reply_markup=reply_markup,
+    )
+    return HANDLE_QUESTIONS
 
 
 def cancel(update, context):
@@ -176,15 +274,14 @@ def bot_starting():
         states={
             HANDLE_MENU: [
                 CallbackQueryHandler(show_meetups, pattern=r'Программа'),
-                CallbackQueryHandler(question_show_meetups,
-                                     pattern=r'Задать вопрос'),
+                CallbackQueryHandler(
+                    show_questions_meetup,
+                    pattern=r'Задать вопрос'
+                ),
             ],
             HANDLE_MEETUP: [
                 CallbackQueryHandler(
                     show_event, pattern=r'[0-9]'
-                ),
-                CallbackQueryHandler(
-                    question_show_event, pattern=r'^AQ_[0-9]*$'
                 ),
                 CallbackQueryHandler(show_menu, pattern=r'Главное меню'),
             ],
@@ -192,8 +289,15 @@ def bot_starting():
                 CallbackQueryHandler(show_event_details, pattern=r'[0-9]'),
                 CallbackQueryHandler(show_meetups, pattern=r'Назад'),
                 CallbackQueryHandler(show_menu, pattern=r'AQ_Назад'),
-
             ],
+            HANDLE_QUESTIONS: [
+                CallbackQueryHandler(show_questions_event, pattern=r'[0-9]'),
+                CallbackQueryHandler(show_menu, pattern=r'Главное меню'),
+            ],
+            HANDLE_SPEAKER_QUESTIONS: [
+                CallbackQueryHandler(show_meetups, pattern=r'Назад'),
+                CallbackQueryHandler(show_event_speakers, pattern=r'[0-9]'),
+            ]
         },
         fallbacks=[
             CommandHandler('cancel', cancel)],
