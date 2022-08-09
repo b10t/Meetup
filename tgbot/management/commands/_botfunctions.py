@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from event.models import (Donat, Event, EventParticipant, Meetup, Participant,
                           Question, Notification)
+from event.models import LISTENER, SPEAKER
 
 
 def html2txt(html):
@@ -93,16 +94,21 @@ def get_meetup_participants(meetup):
     return result
 
 
-def get_event_participants(event):
+def get_event_participants(event, status=None):
     """
     Возвращает список участников события
     """
+    if status is None:
+        event_participants = EventParticipant.objects.filter(event=event)
+    else:
+        event_participants = EventParticipant.objects.filter(event=event, status=status)
+
     result = []
-    for event_participant in EventParticipant.objects.filter(event=event):
+    for event_participant in event_participants:
         result.append({
             'tg_id': event_participant.participant.telegram_id,
             'fio': event_participant.participant.fio,
-            'status': event_participant.status
+            'speaker': event_participant.status
         })
     return result
 
