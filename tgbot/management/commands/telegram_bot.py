@@ -15,7 +15,7 @@ from ._tools import (
     get_event,
     get_event_speker,
 )
-
+from event.models import LISTENER, SPEAKER
 from ._botfunctions import (
     get_event_participants,
 )
@@ -50,7 +50,8 @@ logger = logging.getLogger(__name__)
     HANDLE_EVENT,
     START_OVER,
     HANDLE_QUESTIONS,
-) = range(5)
+    HANDLE_SPEAKER_QUESTIONS,
+) = range(6)
 
 
 def show_menu(update, context):
@@ -197,7 +198,7 @@ def show_questions_meetup(update, context):
 
 
 def show_questions_event(update, context):
-    logger.info('question_show_event')
+    logger.info('show_questions_event')
     meetup_id = update.callback_query.data
     events = get_event(meetup_id)
     keyboard = list()
@@ -215,21 +216,20 @@ def show_questions_event(update, context):
         text=f'Выберите: {events}',
         reply_markup=reply_markup,
     )
-    return HANDLE_QUESTIONS
+    return HANDLE_SPEAKER_QUESTIONS
 
 
 def show_event_speakers(update, context):
     logger.info('show_event_speakers')
     event_id = update.callback_query.data
-    speakers = get_event_participants(event_id)
+    speakers = get_event_participants(event_id, SPEAKER)
     keyboard = list()
     for speaker in speakers:
         keyboard.append(
             [InlineKeyboardButton(
-                speaker.fio,
-                callback_data=speaker.telegram_id
-                )
-            ]
+                speaker['fio'],
+                callback_data=speaker['tg_id']
+                )]
         )
     keyboard.append(
         [InlineKeyboardButton('Назад', callback_data='Назад')]
@@ -237,10 +237,10 @@ def show_event_speakers(update, context):
     reply_markup = InlineKeyboardMarkup(keyboard)
     update.callback_query.answer()
     update.callback_query.edit_message_text(
-        text='Выберите:',
+        text='Выберите: ',
         reply_markup=reply_markup,
     )
-    return HANDLE_QUESTIONS
+    return HANDLE_SPEAKER_QUESTIONS
 
 
 def show_questions_speaker(update, context):
@@ -289,12 +289,14 @@ def bot_starting():
                 CallbackQueryHandler(show_event_details, pattern=r'[0-9]'),
                 CallbackQueryHandler(show_meetups, pattern=r'Назад'),
                 CallbackQueryHandler(show_menu, pattern=r'AQ_Назад'),
-
             ],
             HANDLE_QUESTIONS: [
                 CallbackQueryHandler(show_questions_event, pattern=r'[0-9]'),
-                CallbackQueryHandler(show_event_speakers, pattern=r'[0-9]'),
                 CallbackQueryHandler(show_menu, pattern=r'Главное меню'),
+            ],
+            HANDLE_SPEAKER_QUESTIONS: [
+                CallbackQueryHandler(show_meetups, pattern=r'Назад'),
+                CallbackQueryHandler(show_event_speakers, pattern=r'[0-9]'),
             ]
         },
         fallbacks=[
