@@ -7,13 +7,15 @@ from telegram.ext import (CallbackContext, CallbackQueryHandler,
                           CommandHandler, ConversationHandler, Filters,
                           MessageHandler, Updater)
 from tgbot.management.commands._tools import get_event, get_meetups
+from tgbot.management.commands.telegram_bot import (
+    HANDLE_MEETUP,
+)
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-HANDLE_MENU, HANDLE_MEETUP, HANDLE_EVENT = range(3)
 
 
 def question_show_meetups(update: Update, context: CallbackContext):
@@ -65,7 +67,7 @@ def question_show_event(update: Update, context: CallbackContext):
         text=f'Выберите: {event}',
         reply_markup=reply_markup,
     )
-    return HANDLE_EVENT
+    return HANDLE_QUESTIONS
 
 
 
