@@ -2,7 +2,10 @@ from event.models import (
     Meetup,
     Event,
     EventParticipant,
+    Participant,
+    Question,
 )
+
 
 
 def get_event(meetup_id):
@@ -24,3 +27,17 @@ def get_meetups():
 def get_event_speker(event_id):
     speakers = EventParticipant.objects.filter(event_id=2)
     return [speaker for speaker in speakers]
+
+
+def get_speaker(telegram_id):
+    speaker = Participant.objects.get(telegram_id=telegram_id)
+    return speaker
+
+
+def save_question(message, speaker_tg_id):
+    new_question = Question(
+        speaker=Participant.obgects.get(telegram_id=speaker_tg_id),
+        asker=Participant.objecrs.get(telegram_id=1111111111),
+        question=message,
+    )
+    new_question.save()
